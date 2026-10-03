@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    /* Language + output */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "outDir": "dist",
+    "rootDir": ".",
+
+    /* We write TypeScript AND plain JavaScript in this project.
+       allowJs lets .js files be compiled and imported by .ts files. */
+    "allowJs": true,
+    "checkJs": false,
+
+    /* Type safety */
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Interop so `import express from "express"` works with CJS packages */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+
+    /* DX */
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "tests/**/*", "vitest.config.mts"]
+}
