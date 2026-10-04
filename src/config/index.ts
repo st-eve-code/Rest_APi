@@ -49,6 +49,45 @@ const envSchema = z.object({
     .transform((value) => value === 'true'),
 
   CORS_ORIGIN: z.string().default('*'),
+
+  /**
+   * =============================================================================
+   * JWT / AUTHENTICATION
+   * =============================================================================
+   *
+   * A JWT is signed, not encrypted: anyone holding it can read the claims, but
+   * only the holder of the secret can produce one the server accepts. So the
+   * secret is the entire security boundary -- keep it out of git, rotate it if
+   * it leaks, and never reuse it across environments.
+   */
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+
+  /**
+   * Refresh tokens are signed with a DIFFERENT secret.
+   *
+   * Why: it makes the two token types cryptographically independent. If an
+   * access token ever leaks, an attacker still cannot mint a refresh token, and
+   * revoking refresh sessions cannot be undone by replaying an access token.
+   */
+  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+
+  /** Access tokens are deliberately short-lived: less time to steal, more 401s. */
+  JWT_ACCESS_TTL: z
+    .string()
+    .regex(/^\d+[smhd]?$/, 'JWT_ACCESS_TTL must look like 900, 15m, 12h or 7d')
+    .default('15m'),
+
+  /** Refresh tokens are long-lived, because they are only usable once. */
+  JWT_REFRESH_TTL: z
+    .string()
+    .regex(/^\d+[smhd]?$/, 'JWT_REFRESH_TTL must look like 900, 15m, 12h or 7d')
+    .default('7d'),
+
+  /** Issuer claim. Lets us tell our own tokens apart from anyone else's. */
+  JWT_ISSUER: z.string().default('ado_test_core'),
+
+  /** The web UI's origin. Used to set CORS on the auth routes and to document cookie use. */
+  AUTH_COOKIE_NAME: z.string().default('refresh_token'),
 });
 
 /**
@@ -75,6 +114,31 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
+/**
+ * Refuse to boot in production with a placeholder secret.
+ *
+ * Development convenience ("just use the example secret so the app runs") is how
+ * real breaches happen: the secret ships to production, is published in a repo,
+ * and anyone can mint a token for any user. Failing loudly here is cheap; a
+ * compromised production account is not.
+ */
+if (env.NODE_ENV === 'production') {
+  const placeholders = ['change-me', 'CHANGE_ME', 'secret', 'test', 'development'];
+
+  for (const key of ['JWT_SECRET', 'JWT_REFRESH_SECRET'] as const) {
+    const value = env[key].toLowerCase();
+
+    if (placeholders.some((needle) => value.includes(needle))) {
+      console.error(
+        `Invalid environment variables:\n  - ${key}: looks like a placeholder value.\n` +
+          '    Generate real secrets, e.g.:\n' +
+          `      node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`,
+      );
+      process.exit(1);
+    }
+  }
+}
+
 export const config = {
   nodeEnv: env.NODE_ENV,
   isProduction: env.NODE_ENV === 'production',
@@ -86,6 +150,14 @@ export const config = {
   /** Only connect to a database at all when the driver says so. */
   usesDatabase: env.DB_DRIVER === 'postgres',
   corsOrigin: env.CORS_ORIGIN,
+  jwt: {
+    secret: env.JWT_SECRET,
+    refreshSecret: env.JWT_REFRESH_SECRET,
+    accessTtl: env.JWT_ACCESS_TTL,
+    refreshTtl: env.JWT_REFRESH_TTL,
+    issuer: env.JWT_ISSUER,
+    refreshCookieName: env.AUTH_COOKIE_NAME,
+  },
 } as const;
 
 export type Config = typeof config;

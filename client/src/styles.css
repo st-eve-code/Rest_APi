@@ -108,6 +108,37 @@ code {
   gap: 16px;
 }
 
+/*
+ * Signed-in controls in the header: who you are, plus the two buttons that act
+ * on your behalf. Wrapped in their own flex row so the header can wrap on small
+ * screens without the email colliding with the "New item" button.
+ */
+.app__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.app__user {
+  color: var(--text-muted);
+  font-size: 14px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The signed-out screen. Narrower and centred, because there is only a form on
+ * it -- the full 1040px item layout would look broken with nothing in it.
+ */
+.app--auth {
+  max-width: 420px;
+  justify-content: center;
+  min-height: 100vh;
+}
+
 /* --- buttons ------------------------------------------------------------- */
 
 .button {
@@ -183,6 +214,13 @@ code {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* Explanatory text above a form's fields (the auth screen's "why am I here"). */
+.form__hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 .field {

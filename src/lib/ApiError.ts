@@ -51,6 +51,16 @@ export class ApiError extends Error {
     return new ApiError(409, message, 'CONFLICT', details);
   }
 
+  /** 401 - we do not know who you are. Send them to log in. */
+  static unauthorized(message = 'Authentication required', code = 'UNAUTHORIZED') {
+    return new ApiError(401, message, code);
+  }
+
+  /** 403 - we know who you are, but you are not allowed to do this. */
+  static forbidden(message = 'You do not have permission to perform this action') {
+    return new ApiError(403, message, 'FORBIDDEN');
+  }
+
   /** 500 - we broke. The client gets a generic message, never the internals. */
   static internal(message = 'Internal server error') {
     return new ApiError(500, message, 'INTERNAL_ERROR');

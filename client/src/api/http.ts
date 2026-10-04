@@ -1,4 +1,5 @@
 import type { ErrorBody, FieldError, PaginationMeta, SuccessBody } from '../types';
+import { clearSession, getAccessToken, refreshIfNeeded } from './session';
 
 /**
  * The HTTP layer. Every network call in the app goes through `request()`.
@@ -83,6 +84,11 @@ interface RequestOptions {
   body?: unknown;
   /** Caller-supplied AbortSignal, so a stale request cannot overwrite fresh data. */
   signal?: AbortSignal;
+  /**
+   * Set for the auth calls themselves. Retrying those on a 401 would loop: the
+   * refresh endpoint is exactly what returns 401 when the session is gone.
+   */
+  skipAuthRetry?: boolean;
 }
 
 /**
@@ -95,9 +101,18 @@ interface RequestOptions {
  */
 async function send<T>(
   path: string,
-  { method = 'GET', body, signal }: RequestOptions = {},
+  { method = 'GET', body, signal, skipAuthRetry = false }: RequestOptions = {},
 ): Promise<SuccessBody<T> | undefined> {
   const url = `${BASE_URL}${path}`;
+
+  // Refresh proactively when the token is about to expire, then take whatever
+  // the store now holds. Doing it before `fetch` means the common case never
+  // wastes a round-trip on a request that is about to be rejected.
+  const token = skipAuthRetry ? getAccessToken() : await refreshIfNeeded();
+
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   let response: Response;
 
@@ -105,7 +120,9 @@ async function send<T>(
     response = await fetch(url, {
       method,
       signal,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      // Sends the httpOnly refresh cookie on the auth endpoints.
+      credentials: 'include',
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (cause) {
@@ -121,6 +138,19 @@ async function send<T>(
       'NETWORK_ERROR',
       'Could not reach the API. Is the server running on port 3000? (npm run dev:api)',
     );
+  }
+
+  // A 401 means the access token was rejected: expired, revoked, or signed with
+  // a secret the server no longer uses. Try exactly one refresh + retry, then
+  // give up and let the app fall back to the login screen.
+  if (response.status === 401 && !skipAuthRetry) {
+    const refreshed = await refreshIfNeeded();
+
+    if (refreshed) {
+      return send<T>(path, { method, body, signal, skipAuthRetry: true });
+    }
+
+    clearSession();
   }
 
   // 204 No Content is the documented response for DELETE, and res.json() on a

@@ -14,12 +14,20 @@ export default defineConfig({
      * and calls process.exit(1) if they are missing -- so we must provide a
      * syntactically valid DATABASE_URL even though the tests never connect to a
      * real database (they use the in-memory repository).
+     *
+     * The JWT secrets below are throwaway values generated for the test run.
+     * Tests must never depend on the developer's real .env: a test that only
+     * passes on your machine is a test that will fail in CI.
      */
     env: {
       NODE_ENV: 'test',
       DATABASE_URL: 'postgres://test:test@localhost:5432/ado_test',
       DATABASE_LOG_QUERIES: 'false',
       PORT: '3001',
+      JWT_SECRET: 'test-only-access-secret-not-used-anywhere-else-0123456789',
+      JWT_REFRESH_SECRET: 'test-only-refresh-secret-not-used-anywhere-else-9876543210',
+      JWT_ACCESS_TTL: '15m',
+      JWT_REFRESH_TTL: '7d',
     },
 
     // The request logger would spam every test run.

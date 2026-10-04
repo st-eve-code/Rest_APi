@@ -85,3 +85,34 @@ export interface FieldError {
   field: string;
   message: string;
 }
+
+/** The only values `role` may have (server: USER_ROLES). */
+export const USER_ROLES = ['user', 'admin'] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+/**
+ * A signed-in user, as returned by the API.
+ *
+ * Note there is no `passwordHash` field, and that is enforced on the server by
+ * `toPublicUser()` in src/types/user.ts. The type here mirrors that guarantee:
+ * if a hash ever did leak through, TypeScript would not stop us -- which is
+ * exactly why the server strips it rather than relying on us to ignore it.
+ */
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `data` returned by register / login / refresh. */
+export interface AuthResult {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+  /** Seconds until `accessToken` expires. */
+  expiresIn: number;
+  tokenType: 'Bearer';
+}
