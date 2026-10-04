@@ -1,4 +1,4 @@
-# ado_test — REST API
+# REST API
 
 A small, well-organised REST API for managing **items**, built with:
 
