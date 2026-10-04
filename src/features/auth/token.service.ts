@@ -145,8 +145,9 @@ export function verifyRefreshToken(token: string): RefreshTokenClaims {
 /**
  * Pulls the bearer token out of the `Authorization` header.
  *
- * We return `null` rather than throwing so `optionalAuth` can tell the
- * difference between "no token, carry on" and "bad token, reject".
+ * Returns `null` rather than throwing for anything unusable, so `authenticate`
+ * can answer "no usable token here" with a single 401 instead of a mix of
+ * thrown errors and null checks.
  */
 export function extractBearerToken(header: string | undefined): string | null {
   if (!header) return null;

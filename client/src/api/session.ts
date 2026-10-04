@@ -88,7 +88,7 @@ export function writeSession(tokens: SessionTokens | null): void {
 }
 
 /** True when the token is expired, or close enough that it should be renewed. */
-export function isAccessTokenExpiring(): boolean {
+function isAccessTokenExpiring(): boolean {
   const expiresAt = Number(readStorage(EXPIRES_AT_KEY));
   if (!Number.isFinite(expiresAt)) return true;
 

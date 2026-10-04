@@ -88,33 +88,6 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 }
 
 /**
- * Attaches the user when a valid token is present, but never rejects.
- *
- * Use on endpoints that are richer for a signed-in caller but still work for
- * everyone -- a public list that also flags "created by you", for example.
- * Never use it on an endpoint that grants access based on identity: absence of
- * a token must mean no access there.
- */
-export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
-  const token = extractBearerToken(req.get('authorization'));
-  if (!token) {
-    next();
-    return;
-  }
-
-  try {
-    const claims = verifyAccessToken(token);
-    req.user = { id: claims.sub, email: claims.email, role: claims.role };
-  } catch {
-    // An invalid token is treated as no token at all. Failing here would turn
-    // "public endpoint" into "public unless you hold a stale token", which is a
-    // confusing way to be rejected.
-  }
-
-  next();
-}
-
-/**
  * Requires the caller to hold one of the given roles. Always mount AFTER
  * `authenticate`.
  *

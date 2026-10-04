@@ -30,7 +30,7 @@ interface RefreshSessionRow {
  * This is the boundary where snake_case columns and Dates become camelCase
  * fields and plain strings -- the same job mapRowToItem does for items.
  */
-export function mapUserRow(row: UserRow): User {
+function mapUserRow(row: UserRow): User {
   return {
     id: row.id,
     email: row.email,

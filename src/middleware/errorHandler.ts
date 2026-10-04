@@ -85,18 +85,3 @@ export function errorHandler(
   console.error('[unhandled error]', err);
   sendError(res, 500, 'Internal server error', 'INTERNAL_ERROR');
 }
-
-/**
- * Wraps an async route handler so a rejected promise becomes `next(err)`.
- *
- * Express 5 already does this for you, which is why most of our handlers are
- * simply `async (req, res) => { ... }`. This helper exists for the cases Express
- * cannot cover (e.g. logic inside a `setTimeout` or a `.then()` chain).
- */
-export function asyncHandler<T>(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<T>,
-) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    fn(req, res, next).catch(next);
-  };
-}

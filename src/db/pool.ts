@@ -1,4 +1,4 @@
-import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
+import { Pool, type QueryResult, type QueryResultRow } from 'pg';
 import { config } from '../config';
 
 /**
@@ -60,36 +60,6 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   }
 
   return pool.query<T>(text, values);
-}
-
-/**
- * Borrows ONE client and gives it to you, so several queries inside `fn` run in
- * the same transaction. Use it when a single API call must either fully succeed
- * or fully roll back (e.g. "create the item AND create its first audit row").
- *
- * If `fn` throws, the transaction is rolled back and the client goes back to the
- * pool. If it returns normally, the transaction commits.
- *
- * `client.query` accepts the exact same arguments as our `query` helper.
- */
-export async function withTransaction<T>(
-  fn: (client: PoolClient) => Promise<T>,
-): Promise<T> {
-  const client = await pool.connect();
-
-  try {
-    await client.query('BEGIN');
-    const result = await fn(client);
-    await client.query('COMMIT');
-    return result;
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    // `finally` runs whether we succeeded or failed -- always give the client
-    // back, otherwise the pool eventually runs dry and everything hangs.
-    client.release();
-  }
 }
 
 /**

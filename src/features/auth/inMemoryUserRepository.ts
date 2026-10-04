@@ -118,9 +118,4 @@ export class InMemoryUserRepository implements UserRepository {
 
     return revoked;
   }
-
-  /** Test helper: how many refresh sessions are stored. */
-  sessionCount(): number {
-    return this.sessions.size;
-  }
 }

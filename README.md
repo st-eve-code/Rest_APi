@@ -410,7 +410,6 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 - `email` — required, valid email, unique (duplicate → `409 CONFLICT`).
 - `password` — required, 12–72 characters, three character classes.
-- `displayName` — optional, 1–80 characters.
 - `role` — **cannot be set here**; everyone who registers is a `user`.
 
 ### Login
